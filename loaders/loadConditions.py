@@ -1,6 +1,6 @@
 import pandas as pd
 
-def load(conn, file1="/Users/pericks4/syntheaPyTigerGraph/data/csv/conditions.csv", **kwargs):
+def load(conn, file1="./data/csv/conditions.csv", **kwargs):
     df = pd.read_csv(file1)
     df["CODE"] = df["CODE"].astype(str)
     df["STOP"] = df["STOP"].fillna("2999-12-31 00:00:00")

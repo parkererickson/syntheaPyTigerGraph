@@ -4,8 +4,9 @@ import argparse
 from inspect import signature
 import sys
 import traceback
+import json
+import os
 
-import TGSchema as tgs
 import loaders
 
 def main(args):
@@ -31,17 +32,21 @@ def main(args):
     if args.createSchema or args.all:
         print("======== CREATING SCHEMA ========")
         if isinstance(args.createSchema, str):
-            sch = tgs.TGSchema(conn, args.graphname, args.createSchema)
+            with open(args.createSchema, 'r') as fp:
+                schemaDef = fp.read()
         else:
-            sch = tgs.TGSchema(conn, args.graphname, "./gsql/schema.gsql")
-        out = sch.createSchema()
+            with open("./gsql/schema/schema.gsql", 'r') as fp:
+                schemaDef = fp.read()
+        schemaDef = schemaDef.replace('@graphname@', args.graphname)
+        out = conn.gsql(schemaDef, options=[])
         print(out)
-    print("======== LOADING DATA ========")
+    ''' LOADING DATA '''
     ldrs = [x for x in dir(loaders) if "__" not in x]
     for ldr in ldrs:
         obj = getattr(args, ldr)
         fun = getattr(loaders, ldr).load
         if obj != None and obj != [[]]:
+            print("======== LOADING DATA ========")
             print("Running "+ldr)
             params = {}
             for i in range(len(obj[0])):
@@ -55,14 +60,28 @@ def main(args):
             else:
                 print("FAILURE LOADING "+ldr+": Incorrect Number of Arguments")
         elif args.loadAllData or args.all or obj == [[]]: # if loading job is specified but no filename is given, the object is nested empty lists.
+            print("======== LOADING DATA ========")
             print("Running "+ldr)
             try:
-                    fun(conn)
+                fun(conn)
             except:
                 print("FAILURE LOADING "+ldr+":\n", traceback.format_exc())
                 pass
         else:
             pass
+    if args.installAllQueries or args.all:
+        print("======== INSTALLING QUERIES ========")
+        if isinstance(args.installAllQueries, str):
+            path = args.installAllQueries
+        else:
+            path = "./gsql/queries"
+        files = [os.path.join(path, x) for x in os.listdir(path) if x.endswith(".gsql")]
+        for query in files:
+            with open(query, 'r') as fp:
+                queryDef = fp.read()
+            queryDef = queryDef.replace('@graphname@', args.graphname)
+            out = conn.gsql(queryDef)
+            print(out)
     print("======== PROCESS COMPLETE ========")
 
 if __name__ == "__main__":
@@ -75,7 +94,7 @@ if __name__ == "__main__":
     tArgs = parser.add_argument_group("Available Tasks")
 
     tgConfig.add_argument("--hostname", "-hn", type=str, default="http://localhost", help="Where is your TigerGraph Instance Hosted?")
-    tgConfig.add_argument("--gsqlVersion", "-gsv", type=str, default="3.0.0", help="What version of GSQL are you running?")
+    tgConfig.add_argument("--gsqlVersion", "-gsv", type=str, default="3.1.0", help="What version of GSQL are you running?")
     tgConfig.add_argument("--username", "-u", type=str, default="tigergraph", help="What is your TigerGraph username?")
     tgConfig.add_argument("--password", "-p", type=str, default="tigergraph", help="What is your TigerGraph password?")
     tgConfig.add_argument("--restppPort", "-rp", type=str, default="9000", help="What port is the REST++ interface available?")
@@ -89,10 +108,18 @@ if __name__ == "__main__":
     tArgs.add_argument("--createSchema", "-cs", nargs="?", const=True, help="Creates Schema, optionally takes path to schema file")
     tArgs.add_argument("--drop", "-d", nargs="?", const=True, help="Drops all data from graph")
     tArgs.add_argument("--loadAllData", "-ld", nargs="?", const=True, help="Loads All Data")
+    tArgs.add_argument("--installAllQueries", "-iq", nargs="?", const=True, help="Installs All Queries, optionally takes path to query folder")
     
     for ldr in ldrs:
         tArgs.add_argument("--"+ldr, nargs="*", action="append", help="Specify file paths [file1, file2, ...]")
 
     args = parser.parse_args()
-
+    try:
+        with open("./config.json", 'rt') as f:
+            jn = json.load(f)
+            cfgArgs = argparse.Namespace()
+            cfgArgs.__dict__.update(jn)
+            args = parser.parse_args(namespace=cfgArgs)
+    except:
+        pass
     main(args)

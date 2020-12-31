@@ -1,8 +1,7 @@
 import pandas as pd
 
-def load(conn, file1="/Users/pericks4/syntheaPyTigerGraph/data/csv/encounters.csv", **kwargs):
+def load(conn, file1="./data/csv/encounters.csv", **kwargs):
     df = pd.read_csv(file1)
-    df = df.sample(frac=.25) # Sample 25% of visits
     df["CODE"] = df["CODE"].astype(str)
     attributes = {
         "Code": "CODE",

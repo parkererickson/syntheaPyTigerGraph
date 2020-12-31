@@ -7,3 +7,6 @@ from . import loadConditions
 from . import loadImagingStudies
 from . import loadImmunizations
 from . import loadMedications
+from . import loadObservations
+from . import loadProcedures
+from . import loadLocations

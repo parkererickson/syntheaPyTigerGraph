@@ -1,6 +1,6 @@
 import pandas as pd
 
-def load(conn, file1="/Users/pericks4/syntheaPyTigerGraph/data/csv/patients.csv", **kwargs):
+def load(conn, file1="./data/csv/patients.csv", **kwargs):
     df = pd.read_csv(file1)
     df["DEATHDATE"] = df["DEATHDATE"].fillna("2999-12-31 00:00:00")
     df = df.fillna('')

@@ -1,0 +1,102 @@
+CREATE QUERY CalculatePatientAge(VERTEX<Patient> p) FOR GRAPH @graphname@ RETURNS (DOUBLE){ 
+	IF p.DateOfDeath == to_datetime("2999-12-31 00:00:00") THEN
+	  RETURN datetime_diff( now(), p.DateOfBirth ) / (60 * 60 * 24 * 365);
+	ELSE
+	  RETURN datetime_diff( p.DateOfDeath, p.DateOfBirth ) / (60 * 60 * 24 * 365);
+	END;
+}
+
+INSTALL QUERY CalculatePatientAge
+
+CREATE QUERY JaccardSimilarityExample(STRING SSN) FOR GRAPH @graphname@ { 
+  	MapAccum<STRING, BagAccum<STRING>> @@attributes;
+	SetAccum<STRING> @attributeSet, @intersectSet, @unionSet, @@patientPrimeAttributeSet;
+	MapAccum<STRING, BagAccum<STRING>> @attributes;
+	ListAccum<DOUBLE> @patientAttributeScore, @patientPrimeAttributeScore;
+	SumAccum<DOUBLE> @score = 0;
+	MinAccum<DOUBLE> @@minRange, @@minRangeTop;
+	MaxAccum<DOUBLE> @@maxRange, @@maxRangeTop;
+	
+  	patientList = {Patient.*};
+		
+	#Get all attributes for 
+	similarPatients = SELECT 
+	                    p 
+	                  FROM patientList:p
+	                  ACCUM
+	                    p.@attributes += ("Age" -> to_string(CalculatePatientAge( p )) ),
+	                    p.@attributes += ( "Procedure" ->  p.neighborAttribute("hasProcedure","PatientProcedure","Code") ),
+	                    p.@attributes += ( "Medication" -> p.neighborAttribute("hasMedication","Medication","Code") ),
+	                    p.@attributes += ( "Immunization" -> p.neighborAttribute("hasImmunization","Immunization","Code") ),
+	                    p.@attributes += ( "Allergy" -> p.neighborAttribute("hasAllergy","Allergy","Code") )
+	                  POST-ACCUM	
+	                    FOREACH (key, list) IN p.@attributes DO
+	                      FOREACH item IN list DO
+	
+	                        p.@attributeSet += key + ":" + item,
+	        
+	                        IF p.SSN == SSN THEN
+	                          @@patientPrimeAttributeSet += key + ":" + item
+	                        END
+	
+	                      END
+	                    END;
+
+	
+	similarPatients =  SELECT 
+	         p 
+	       FROM similarPatients:p
+	       ACCUM
+	          p.@intersectSet = p.@attributeSet INTERSECT @@patientPrimeAttributeSet,
+	          p.@unionSet = p.@attributeSet UNION @@patientPrimeAttributeSet
+	       POST-ACCUM
+	          FOREACH item in p.@unionSet DO	
+	                  IF p.@attributeSet.contains(item) THEN
+	                      p.@patientAttributeScore += 1.0
+	                  ELSE
+	                      p.@patientAttributeScore += 0.0
+	                  END,
+	                  IF @@patientPrimeAttributeSet.contains(item) THEN
+	                      p.@patientPrimeAttributeScore += 1.0
+	                  ELSE
+	                      p.@patientPrimeAttributeScore += 0.0
+	                  END
+	          END,
+	          p.@score = (1.0 * p.@intersectSet.size()) / (1.0 * ( p.@attributeSet.size() + @@patientPrimeAttributeSet.size() - p.@intersectSet.size() ));
+	
+
+	#Find patient prime
+	patientPrime = SELECT
+	                  p
+	                FROM patientList:p 
+	                WHERE p.SSN == SSN
+	                POST-ACCUM
+	                  p.@patientAttributeScore.clear(),
+	                  p.@patientPrimeAttributeScore.clear();
+	
+	
+	topPatients =  SELECT 
+	                   p 
+	               FROM similarPatients:p
+	               WHERE p.SSN != SSN
+	               ACCUM
+		       	   @@minRange += p.@score,
+	                   @@maxRange += p.@score
+	               ORDER BY p.@score DESC
+	               LIMIT 10;
+	
+	topPatients =  SELECT 
+	                   p 
+	               FROM topPatients:p
+	               ACCUM
+	                   @@minRangeTop += p.@score,
+	                   @@maxRangeTop += p.@score
+	               POST-ACCUM
+	                   p.@patientAttributeScore.clear(),
+	                   p.@patientPrimeAttributeScore.clear();
+	  
+	PRINT patientPrime;
+	PRINT topPatients, @@minRange, @@maxRange, @@minRangeTop, @@maxRangeTop;
+}
+
+INSTALL QUERY JaccardSimilarityExample

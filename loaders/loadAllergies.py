@@ -1,6 +1,6 @@
 import pandas as pd
 
-def load(conn, file1="/Users/pericks4/syntheaPyTigerGraph/data/csv/allergies.csv", **kwargs):
+def load(conn, file1="./data/csv/allergies.csv", **kwargs):
     df = pd.read_csv(file1)
     attributes = {
         "Description": "DESCRIPTION"

@@ -1,6 +1,6 @@
 import pandas as pd
 
-def load(conn, file1="/Users/pericks4/syntheaPyTigerGraph/data/csv/medications.csv", **kwargs):
+def load(conn, file1="./data/csv/medications.csv", **kwargs):
     df = pd.read_csv(file1)
     df["CODE"] = df["CODE"].astype(str)
     df["REASONCODE"] = df["REASONCODE"].astype(str)
