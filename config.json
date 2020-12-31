@@ -1,5 +1,4 @@
 {
-    "hostname": "http://localhost",
     "gsqlVersion": "3.0.0",
     "graphname": "Synthea"
 }
