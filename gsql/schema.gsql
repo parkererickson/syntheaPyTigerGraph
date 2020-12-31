@@ -10,7 +10,7 @@ CREATE VERTEX CarePlan(PRIMARY_ID Id STRING, Code STRING, Description STRING, Re
 
 CREATE VERTEX Condition(PRIMARY_ID Id STRING, Code STRING, Description STRING)
 
-CREATE VERTEX ImagingStudy(PRIMARY_ID Id STRING, BodySiteCode STRING, BodySiteDesciption STRING, ModalityCode STRING, ModalityDesciption STRING, SOPCode STRING, SOPDescription STRING, ImagingDate DATETIME)
+CREATE VERTEX ImagingStudy(PRIMARY_ID Id STRING, BodySiteCode STRING, BodySiteDescription STRING, ModalityCode STRING, ModalityDescription STRING, SOPCode STRING, SOPDescription STRING, ImagingDate DATETIME)
 
 CREATE VERTEX Immunization(PRIMARY_ID Id STRING, Code STRING, Description STRING, Cost DOUBLE)
 

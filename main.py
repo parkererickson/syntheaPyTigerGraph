@@ -1,6 +1,9 @@
 import pyTigerGraph as tg
 
 import argparse
+from inspect import signature
+import sys
+import traceback
 
 import TGSchema as tgs
 import loaders
@@ -14,7 +17,8 @@ def main(args):
                                    gsPort=args.gsqlPort,
                                    apiToken=args.apiToken,
                                    useCert=args.useCert,
-                                   certPath=args.certPath
+                                   certPath=args.certPath,
+                                   graphname=args.graphname
                                    )
     if args.drop or args.all:
         print("======== DROPPING ALL DATA ========")
@@ -36,20 +40,30 @@ def main(args):
     ldrs = [x for x in dir(loaders) if "__" not in x]
     for ldr in ldrs:
         obj = getattr(args, ldr)
-        if obj != None and obj[0] != []:
+        fun = getattr(loaders, ldr).load
+        if obj != None and obj != [[]]:
             print("Running "+ldr)
             params = {}
             for i in range(len(obj[0])):
                 params["file"+str(i+1)] = obj[0][i]
-            try:
-                getattr(loaders, ldr).load(**params)
-            except:
-                print("FAIL: Invalid arguments for "+ldr)
+            if len(params) != len(signature(fun).parameters):
+                try:
+                    fun(conn, **params)
+                except:
+                    print("FAILURE LOADING "+ldr+":\n", traceback.format_exc())
+                    pass
+            else:
+                print("FAILURE LOADING "+ldr+": Incorrect Number of Arguments")
         elif args.loadAllData or args.all or obj == [[]]: # if loading job is specified but no filename is given, the object is nested empty lists.
             print("Running "+ldr)
-            getattr(loaders, ldr).load()
+            try:
+                    fun(conn)
+            except:
+                print("FAILURE LOADING "+ldr+":\n", traceback.format_exc())
+                pass
         else:
             pass
+    print("======== PROCESS COMPLETE ========")
 
 if __name__ == "__main__":
     # host="http://localhost", graphname="MyGraph", username="tigergraph", password="tigergraph", restppPort="9000", gsPort="14240", apiToken="", gsqlVersion="", useCert=False, certPath=None
