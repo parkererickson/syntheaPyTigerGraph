@@ -4,6 +4,7 @@ import pandas as pd
 
 def load(conn, file1="./data/csv/observations.csv", **kwargs):
     df = pd.read_csv(file1)
+    df = df.fillna('')
     df["CODE"] = df["CODE"].astype(str)
     df["VALUE"] = df["VALUE"].astype(str)
     attributes = {
