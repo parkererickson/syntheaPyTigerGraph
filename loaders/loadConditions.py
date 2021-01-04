@@ -7,7 +7,6 @@ def load(conn, file1="./data/csv/conditions.csv", **kwargs):
     attributes = {
         "Code": "CODE",
         "Description": "DESCRIPTION",
-
     }
     numUpserted = conn.upsertVertexDataFrame(df, "Condition", "CODE", attributes)
     print("Upserted "+str(numUpserted)+" Conditions")
