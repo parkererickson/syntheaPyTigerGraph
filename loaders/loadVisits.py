@@ -18,3 +18,12 @@ def load(conn, file1="./data/csv/encounters.csv", **kwargs):
 
     numUpserted = conn.upsertEdgeDataFrame(df, "Provider", "providerVisit", "Visit", from_id="PROVIDER", to_id="Id", attributes={})
     print("Upserted "+str(numUpserted)+" providerVisit edges")
+
+    attributes = {
+        "Code": "CODE",
+        "Description": "DESCRIPTION"
+    }
+
+    numUpserted = conn.upsertVertexDataFrame(df, "SnomedCode", "CODE", attributes)
+
+    numUpserted = conn.upsertEdgeDataFrame(df, "Visit", "visitCode", "SnomedCode", from_id="Id", to_id="CODE", attributes={})

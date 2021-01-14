@@ -7,11 +7,13 @@ def load(conn, file1="./data/csv/observations.csv", **kwargs):
     df = df.fillna('')
     df["CODE"] = df["CODE"].astype(str)
     df["VALUE"] = df["VALUE"].astype(str)
+    df["CodeType"] = "Observation"
     attributes = {
         "Code": "CODE",
         "Description": "DESCRIPTION",
+        "CodeType": "CodeType"
     }
-    numUpserted = conn.upsertVertexDataFrame(df, "Observation", "CODE", attributes)
+    numUpserted = conn.upsertVertexDataFrame(df, "SnomedCode", "CODE", attributes)
     print("Upserted "+str(numUpserted)+" Observations")
 
     attributes = {
@@ -21,5 +23,5 @@ def load(conn, file1="./data/csv/observations.csv", **kwargs):
         "ValueType": "VALUE"
     }
 
-    numUpserted = conn.upsertEdgeDataFrame(df, "Patient", "hasObservation", "Observation", from_id="PATIENT", to_id="CODE", attributes=attributes)
+    numUpserted = conn.upsertEdgeDataFrame(df, "Patient", "hasObservation", "SnomedCode", from_id="PATIENT", to_id="CODE", attributes=attributes)
     print("Upserted "+str(numUpserted)+" hasObservation edges")

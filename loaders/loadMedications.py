@@ -5,6 +5,7 @@ def load(conn, file1="./data/csv/medications.csv", **kwargs):
     df["CODE"] = df["CODE"].astype(str)
     df["REASONCODE"] = df["REASONCODE"].astype(str)
     df["STOP"] = df["STOP"].fillna("2999-12-31 00:00:00")
+    df["Id"] = df["ENCOUNTER"].str.cat(df["CODE"], sep=":")
     df = df.fillna('')
     attributes = {
         "Code": "CODE",
@@ -15,7 +16,7 @@ def load(conn, file1="./data/csv/medications.csv", **kwargs):
         "ReasonCode": "REASONCODE",
         "ReasonDescription": "REASONDESCRIPTION"
     }
-    numUpserted = conn.upsertVertexDataFrame(df, "Medication", "CODE", attributes)
+    numUpserted = conn.upsertVertexDataFrame(df, "Medication", "Id", attributes)
     print("Upserted "+str(numUpserted)+" Medications")
 
     attributes = {
@@ -23,5 +24,25 @@ def load(conn, file1="./data/csv/medications.csv", **kwargs):
         "Stopped": "STOP"
     }
 
-    numUpserted = conn.upsertEdgeDataFrame(df, "Patient", "hasMedication", "Medication", from_id="PATIENT", to_id="CODE", attributes=attributes)
-    print("Upserted "+str(numUpserted)+" hasCondition edges")
+    numUpserted = conn.upsertEdgeDataFrame(df, "Patient", "hasMedication", "Medication", from_id="PATIENT", to_id="Id", attributes=attributes)
+    print("Upserted "+str(numUpserted)+" hasMedication edges")
+
+    attributes = {
+        "Code": "REASONCODE",
+        "Description": "REASONDESCRIPTION"
+    }
+
+    numUpserted = conn.upsertVertexDataFrame(df, "SnomedCode", "REASONCODE", attributes)
+
+    numUpserted = conn.upsertEdgeDataFrame(df, "Medication", "reasonOfMedication", "SnomedCode", from_id="Id", to_id="REASONCODE", attributes={})
+
+    attributes = {
+        "Code": "CODE",
+        "Description": "DESCRIPTION"
+    }
+
+    numUpserted = conn.upsertVertexDataFrame(df, "SnomedCode", "CODE", attributes)
+
+    numUpserted = conn.upsertEdgeDataFrame(df, "Medication", "medicationCode", "SnomedCode", from_id="Id", to_id="CODE", attributes={})
+
+    numUpserted = conn.upsertEdgeDataFrame(df, "Medication", "prescribedAt", "Visit", from_id="Id", to_id="ENCOUNTER", attributes={})

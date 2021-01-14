@@ -10,9 +10,6 @@ def load(conn, file1="./data/csv/patients.csv", **kwargs):
         "Prefix": "PREFIX",
         "Suffix": "SUFFIX",
         "MaidenName": "MAIDEN",
-        "Gender": "GENDER",
-        "Race": "RACE",
-        "Ethnicity": "ETHNICITY",
         "SSN": "SSN",
         "DL": "DRIVERS",
         "Passport": "PASSPORT",
@@ -21,3 +18,18 @@ def load(conn, file1="./data/csv/patients.csv", **kwargs):
     }
     numUpserted = conn.upsertVertexDataFrame(df, "Patient", "Id", attributes)
     print("Upserted "+str(numUpserted)+" Patients")
+
+    numUpserted = conn.upsertVertexDataFrame(df, "Gender", "GENDER", attributes={})
+    print("Upserted", str(numUpserted), "Genders")
+
+    numUpserted = conn.upsertVertexDataFrame(df, "Race", "RACE", attributes={})
+    print("Upserted", str(numUpserted), "Races")
+
+    numUpserted = conn.upsertVertexDataFrame(df, "Ethnicity", "ETHNICITY", attributes={})
+    print("Upserted", str(numUpserted), "Ethnicities")
+
+    numUpserted = conn.upsertEdgeDataFrame(df, "Patient", "patientRace", "Race", from_id="Id", to_id="RACE", attributes={})
+    numUpserted = conn.upsertEdgeDataFrame(df, "Patient", "patientGender", "Gender", from_id="Id", to_id="GENDER", attributes={})
+    numUpserted = conn.upsertEdgeDataFrame(df, "Patient", "patientEthnicity", "Ethnicity", from_id="Id", to_id="ETHNICITY", attributes={})
+
+

@@ -10,3 +10,4 @@ from . import loadMedications
 from . import loadObservations
 from . import loadProcedures
 from . import loadLocations
+from . import loadOrganizations
